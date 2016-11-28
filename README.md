@@ -1,4 +1,5 @@
-# Cats instances for Scala.js rx
+# Scalatags vdom observable
+Observable stuff for [scalatags-vdom](https://github.com/KadekM/scalatags-vdom)
 
 [![Build Status](https://travis-ci.org/KadekM/scalatags-vdom-observable.svg?branch=dev)](https://travis-ci.org/KadekM/scalatags-vdom-observable)
 [![Maven Central](https://img.shields.io/maven-central/v/com.marekkadek/scalatags-vdom-observable_sjs0.6_2.12.svg)](https://maven-badges.herokuapp.com/maven-central/com.marekkadek/scalatags-vdom-observable_sjs0.6_2.12)
