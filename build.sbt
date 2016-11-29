@@ -76,13 +76,13 @@ val publishSettings = Seq(
 
 // ---- modules ----
 
-lazy val cats = Project(id = "scalatags-vdom-observable", base = file("modules/cats"))
+lazy val vdom_observable = Project(id = "scalatags-vdom-observable", base = file("modules/vdom-observable"))
   .settings(
     commonSettings,
     publishSettings,
     libraryDependencies ++= Seq(
-      "com.github.lukajcb" %%% "rxscala-js" % "0.9.2",
-      "com.marekkadek" %%% "rxscala-js-cats" % "0.1-SNAPSHOT",
+      "com.github.lukajcb" %%% "rxscala-js" % "0.10.0",
+      //"com.marekkadek" %%% "rxscala-js-cats" % "0.1-SNAPSHOT",
       "com.marekkadek" %%% "scalatags-vdom" % "0.3-SNAPSHOT",
 
       "org.scalatest" %%% "scalatest" % "3.0.1" % Test,
@@ -92,10 +92,10 @@ lazy val cats = Project(id = "scalatags-vdom-observable", base = file("modules/c
   )
   .enablePlugins(ScalaJSPlugin)
 
-lazy val root = Project(id = "root", base = file("."))
+lazy val root = Project(id = "vdom-observable-root", base = file("."))
   .settings(
     commonSettings,
     noPublishSettings
   )
-  .dependsOn(cats)
-  .aggregate(cats)
+  .dependsOn(vdom_observable)
+  .aggregate(vdom_observable)
