@@ -1,4 +1,4 @@
-val scalaV = "2.12.0"
+val scalaV = "2.11.8"
 val crossScalaV = Seq("2.11.8", "2.12.0")
 
 // ---- formatting ----
@@ -74,23 +74,33 @@ val publishSettings = Seq(
       </developers>
 )
 
+val libsDeps = Seq(
+  libraryDependencies ++= Seq(
+    "com.github.lukajcb" %%% "rxscala-js" % "0.10.0",
+    //"com.marekkadek" %%% "rxscala-js-cats" % "0.1-SNAPSHOT",
+    "com.marekkadek" %%% "scalatags-vdom" % "0.3.0-SNAPSHOT" changing(),
+
+    "org.scalatest" %%% "scalatest" % "3.0.1" % Test,
+    "org.scalacheck" %%% "scalacheck" % "1.13.4" % Test
+  ),
+  jsDependencies += "org.webjars.npm" % "rxjs" % "5.0.0-rc.4" / "bundles/Rx.min.js" commonJSName "Rx"
+)
+
 // ---- modules ----
 
 lazy val vdom_observable = Project(id = "scalatags-vdom-observable", base = file("modules/vdom-observable"))
   .settings(
     commonSettings,
     publishSettings,
-    libraryDependencies ++= Seq(
-      "com.github.lukajcb" %%% "rxscala-js" % "0.10.0",
-      //"com.marekkadek" %%% "rxscala-js-cats" % "0.1-SNAPSHOT",
-      "com.marekkadek" %%% "scalatags-vdom" % "0.3-SNAPSHOT",
-
-      "org.scalatest" %%% "scalatest" % "3.0.1" % Test,
-      "org.scalacheck" %%% "scalacheck" % "1.13.4" % Test
-    ),
-    jsDependencies += "org.webjars.npm" % "rxjs" % "5.0.0-rc.4" / "bundles/Rx.min.js" commonJSName "Rx"
+    libsDeps
   )
   .enablePlugins(ScalaJSPlugin)
+
+lazy val sample = Project(id = "sample", base = file("modules/sample"))
+  .settings(commonSettings, noPublishSettings, libsDeps)
+  .enablePlugins(ScalaJSPlugin)
+  .dependsOn(vdom_observable)
+  .aggregate(vdom_observable)
 
 lazy val root = Project(id = "vdom-observable-root", base = file("."))
   .settings(
