@@ -12,15 +12,25 @@ import scalatags.vdom.raw.VNode
 
 object observe {
 
-  def obs(t: TypedTag[VNode])(observe: Attr*): ObservableTag =
+  def any(t: TypedTag[VNode])(observe: Attr*): ObservableTag =
     ObservableTag(t)(observe: _*)
 
   // find some generalized way
 
-  def obsInputElement(t: TypedTag[VNode])(
-    observe: Attr*): ObservableTag with ObservableInputElement =
-    new ObservableTag with ObservableInputElement {
+  def inputElement(t: TypedTag[VNode])(
+      observe: Attr*): ObservableTag with InputElement =
+    new ObservableTag with InputElement {
       override val tag: TypedTag[VNode] = (oninput +: observe)
+        .foldLeft(t)(applyAttr)
+        .apply(onvdomload := { (e: dom.Node) =>
+          _element.next(e)
+        })
+    }
+
+  def checkbox(t: TypedTag[VNode])(
+    observe: Attr*): ObservableTag with Checkbox =
+    new ObservableTag with Checkbox {
+      override val tag: TypedTag[VNode] = (onchange +: observe)
         .foldLeft(t)(applyAttr)
         .apply(onvdomload := { (e: dom.Node) =>
           _element.next(e)
@@ -63,9 +73,9 @@ trait ObservableTag {
     })
 }
 
-trait ObservableInputElement { self: ObservableTag =>
+trait InputElement { self: ObservableTag =>
 
-  final val text: Observable[String] = element
+  final val value: Observable[String] = element
     .map(x => x.asInstanceOf[HTMLInputElement].value)
     .merge {
       events.collect {
@@ -73,6 +83,21 @@ trait ObservableInputElement { self: ObservableTag =>
         case e: dom.Event => e.target.asInstanceOf[HTMLInputElement].value
       }
     }
+    // updates on vdom cause event to fire, even if text doesnt change...
+    // we could look into whole vdom hook since it has both states, hm
+    // maybe it should fire (oldState, newState)
+    .distinct
     .publishReplay(1)
     .refCount
+}
+
+trait Checkbox extends InputElement { self: ObservableTag =>
+
+  final val checked: Observable[Boolean] =
+    element.map(x => x.asInstanceOf[HTMLInputElement].checked).merge {
+      events.collect {
+        case e: dom.Event => e.target.asInstanceOf[HTMLInputElement].checked
+      }
+    }
+
 }

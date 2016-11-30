@@ -16,16 +16,21 @@ object Main extends JSApp {
     println("Started")
     val appDiv = dom.document.getElementById("app")
 
-    val inputO = obsInputElement(input(`type` := "text", value := "something"))(oninput)
-    val printlnButtonO = obs(input(`type` := "button", value := "println"))(onclick)
+    val inputCheck = checkbox(input(`type` := "checkbox", value := "something"))()
+    inputCheck.checked.subscribe(x => println("checked:" + x))
+    inputCheck.value.subscribe(x => println("value:" + x))
 
-    inputO.text.subscribe(x => println("input text: " + x))
+    val inputO = inputElement(input(`type` := "text", value := "something"))()
+    inputO.value.subscribe(x => println("input text: " + x))
     inputO.element.subscribe(x => println("input element:" + x))
     inputO.events.subscribe(x => println("input: " + x), e => println(e))
+
+    val printlnButtonO = any(input(`type` := "button", value := "println"))(onclick)
     printlnButtonO.events.subscribe(x => println("button: " + x), e => println(e))
 
     val vdom = div(
-      inputO.tag
+      inputCheck.tag
+      ,inputO.tag
       ,printlnButtonO.tag
     )
 
