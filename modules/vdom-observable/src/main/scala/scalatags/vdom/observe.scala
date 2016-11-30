@@ -2,6 +2,7 @@ package scalatags.vdom
 
 import scalatags.VDom.all._
 import org.scalajs.dom
+import org.scalajs.dom.raw.HTMLInputElement
 import rxscalajs._
 
 import scalatags.VDom.TypedTag
@@ -11,20 +12,27 @@ import scalatags.vdom.raw.VNode
 
 object observe {
 
-  def obs(t: TypedTag[VNode])(es: Attr*): ObservableTag = ObservableTag(t)(es: _*)
+  def obs(t: TypedTag[VNode])(observe: Attr*): ObservableTag =
+    ObservableTag(t)(observe: _*)
 
-  def obsTextInput(t: TypedTag[VNode])(
-      es: Attr*): ObservableTag with ObservableTextInput =
-    new ObservableTag with ObservableTextInput {
-      override val tag: TypedTag[VNode] = ???
+  // find some generalized way
+
+  def obsInputElement(t: TypedTag[VNode])(
+    observe: Attr*): ObservableTag with ObservableInputElement =
+    new ObservableTag with ObservableInputElement {
+      override val tag: TypedTag[VNode] = (oninput +: observe)
+        .foldLeft(t)(applyAttr)
+        .apply(onvdomload := { (e: dom.Node) =>
+          _element.next(e)
+        })
     }
 
 }
 
 object ObservableTag {
 
-  def apply(t: TypedTag[VNode])(es: Attr*) = new ObservableTag {
-    override lazy val tag: TypedTag[VNode] = es
+  def apply(t: TypedTag[VNode])(observe: Attr*) = new ObservableTag {
+    override lazy val tag: TypedTag[VNode] = observe
       .foldLeft(t)(applyAttr)
       .apply(onvdomload := { (e: dom.Node) =>
         _element.next(e)
@@ -48,30 +56,23 @@ trait ObservableTag {
 
   final val element: Observable[dom.raw.Node] = _element
 
-  // internal api
-
-  protected[this] def feedGenericEvent(e: dom.Event): Unit = _events.next(e)
-
-  protected[this] lazy val obsMap: Map[Attr, dom.Event => Unit] = Map(
-    onchange -> feedGenericEvent,
-    onload -> feedGenericEvent,
-    oninput -> feedGenericEvent,
-    onclick -> feedGenericEvent
-  )
-
   protected[this] def applyAttr(t: TypedTag[VNode],
                                 attr: Attr): TypedTag[VNode] =
-    obsMap.get(attr) match {
-      case None => t
-      case Some(f) => t(attr := f)
-    }
+    t(attr := { (e: dom.Event) =>
+      _events.next(e)
+    })
 }
 
-trait ObservableTextInput { self: ObservableTag =>
+trait ObservableInputElement { self: ObservableTag =>
 
-  protected[this] final val _text: Subject[String] =
-    Subject[String]() // element.asInstanceOf.value.publishReplay ...etc
-
-  final val text: Observable[dom.raw.Event] = _events
-
+  final val text: Observable[String] = element
+    .map(x => x.asInstanceOf[HTMLInputElement].value)
+    .merge {
+      events.collect {
+        // todo: doesn't this fire for some events we don't want?
+        case e: dom.Event => e.target.asInstanceOf[HTMLInputElement].value
+      }
+    }
+    .publishReplay(1)
+    .refCount
 }
