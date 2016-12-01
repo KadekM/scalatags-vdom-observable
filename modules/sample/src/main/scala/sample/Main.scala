@@ -29,8 +29,11 @@ object Main extends JSApp {
     printlnButtonO.events.subscribe(x => println("button: " + x), e => println(e))
 
     val vdom = div(
+
       inputCheck.tag
+      ,hr()
       ,inputO.tag
+      ,hr()
       ,printlnButtonO.tag
     )
 

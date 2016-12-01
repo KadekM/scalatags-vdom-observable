@@ -86,7 +86,7 @@ trait InputElement { self: ObservableTag =>
     // updates on vdom cause event to fire, even if text doesnt change...
     // we could look into whole vdom hook since it has both states, hm
     // maybe it should fire (oldState, newState)
-    .distinct
+    .distinctUntilChanged
     .publishReplay(1)
     .refCount
 }
