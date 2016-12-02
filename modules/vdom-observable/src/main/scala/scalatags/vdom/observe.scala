@@ -6,7 +6,7 @@ import org.scalajs.dom.raw.HTMLInputElement
 import rxscalajs._
 
 import scalatags.VDom.TypedTag
-import scalatags.vdom
+import scalatags.{VDom, vdom}
 import scalatags.events.AllEventsImplicits._
 import scalatags.vdom.raw.VNode
 
@@ -28,7 +28,7 @@ object observe {
     }
 
   def checkbox(t: TypedTag[VNode])(
-    observe: Attr*): ObservableTag with Checkbox =
+      observe: Attr*): ObservableTag with Checkbox =
     new ObservableTag with Checkbox {
       override val tag: TypedTag[VNode] = (onchange +: observe)
         .foldLeft(t)(applyAttr)
@@ -36,6 +36,21 @@ object observe {
           _element.next(e)
         })
     }
+
+  def react[T](t: TypedTag[VNode])(attr: Attr, obs: Observable[T])(
+      implicit ev: scalatags.generic.AttrValue[Builder, T])
+    : Observable[TypedTag[VNode]] =
+    Observable.just(t).merge {
+      obs.map { v =>
+        t(attr := v)
+      }
+    }
+
+
+/*    def react(t: TypedTag[VNode])(at: Attr, o: Observable[Any]) = o.map { x =>
+      t.apply(at)
+
+    }*/
 
 }
 
