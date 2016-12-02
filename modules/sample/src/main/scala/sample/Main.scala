@@ -37,7 +37,7 @@ object Main extends JSApp {
 
     // -- components that react
     // -- todo - be able to observe events from component that readcts
-    val obsButton = react(input(`type` := "button"))(value, inputO.value)
+    val obsButton = react(input(`type` := "button"))(value -> inputO.value)
 
 
     //  -- static components, that do not need or force re-rendering (very rare in reality...)

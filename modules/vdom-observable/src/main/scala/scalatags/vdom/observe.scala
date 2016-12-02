@@ -12,8 +12,33 @@ import scalatags.vdom.raw.VNode
 
 object observe {
 
+  type ConnectAttribute[+T] = (Attr, Observable[T])
+
   def any(t: TypedTag[VNode])(observe: Attr*): ObservableTag =
     ObservableTag(t)(observe: _*)
+
+  // generalize via shapeless?
+
+  def react[T](t: TypedTag[VNode])(obs: ConnectAttribute[T])(
+      implicit ev: scalatags.generic.AttrValue[Builder, T])
+    : Observable[TypedTag[VNode]] =
+    Observable.just(t).merge {
+      obs._2.map { v =>
+        t(obs._1 := v)
+      }
+    }
+
+  def react2[T1, T2](t: TypedTag[VNode])(obs1: ConnectAttribute[T1],
+                                         obs2: ConnectAttribute[T2])(
+      implicit ev1: scalatags.generic.AttrValue[Builder, T1],
+      ev2: scalatags.generic.AttrValue[Builder, T2]
+  ): Observable[TypedTag[VNode]] =
+    Observable.just(t).merge {
+      obs1._2.combineLatestWith(obs2._2) {
+        case (v1, v2) =>
+          t(obs1._1 := v1, obs2._1 := v2)
+      }
+    }
 
   // find some generalized way
 
@@ -36,22 +61,6 @@ object observe {
           _element.next(e)
         })
     }
-
-  def react[T](t: TypedTag[VNode])(attr: Attr, obs: Observable[T])(
-      implicit ev: scalatags.generic.AttrValue[Builder, T])
-    : Observable[TypedTag[VNode]] =
-    Observable.just(t).merge {
-      obs.map { v =>
-        t(attr := v)
-      }
-    }
-
-
-/*    def react(t: TypedTag[VNode])(at: Attr, o: Observable[Any]) = o.map { x =>
-      t.apply(at)
-
-    }*/
-
 }
 
 object ObservableTag {
