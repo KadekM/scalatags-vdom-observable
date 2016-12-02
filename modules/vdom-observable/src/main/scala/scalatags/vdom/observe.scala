@@ -4,9 +4,9 @@ import scalatags.VDom.all._
 import org.scalajs.dom
 import org.scalajs.dom.raw.HTMLInputElement
 import rxscalajs._
+import shapeless.Id
 
 import scalatags.VDom.TypedTag
-import scalatags.{VDom, vdom}
 import scalatags.events.AllEventsImplicits._
 import scalatags.vdom.raw.VNode
 
@@ -14,10 +14,8 @@ object observe {
 
   type ConnectAttribute[+T] = (Attr, Observable[T])
 
-  def any(t: TypedTag[VNode])(observe: Attr*): ObservableTag =
-    ObservableTag(t)(observe: _*)
-
-  // generalize via shapeless?
+  // -- generalize via shapeless?
+  // for static content
 
   def react[T](t: TypedTag[VNode])(obs: ConnectAttribute[T])(
       implicit ev: scalatags.generic.AttrValue[Builder, T])
@@ -40,43 +38,80 @@ object observe {
       }
     }
 
-  // find some generalized way
+  // for observable content
+
+  def react[T](t: ObservableTag with NonReactiveTag)(obs: ConnectAttribute[T])(
+      implicit ev: scalatags.generic.AttrValue[Builder, T])
+    : ObservableTag with ReactiveTag = new ObservableTag with ReactiveTag {
+
+    override val forceObserve: Seq[_root_.scalatags.VDom.all.Attr] =
+      t.forceObserve
+
+    override val tag: Observable[TypedTag[VNode]] =
+      Observable.just(t.tag).merge {
+        obs._2.map { v =>
+          applyAttrs(t.tag(obs._1 := v))
+        }
+      }
+  }
+
+  def react2[T1, T2](t: ObservableTag with NonReactiveTag)(
+      obs1: ConnectAttribute[T1],
+      obs2: ConnectAttribute[T2])(
+      implicit ev1: scalatags.generic.AttrValue[Builder, T1],
+      ev2: scalatags.generic.AttrValue[Builder, T2])
+    : ObservableTag with ReactiveTag = new ObservableTag with ReactiveTag {
+
+    override val forceObserve: Seq[_root_.scalatags.VDom.all.Attr] =
+      t.forceObserve
+
+    override val tag: Observable[TypedTag[VNode]] =
+      Observable.just(t.tag).merge {
+        obs1._2.combineLatestWith(obs2._2) {
+          case (v1, v2) =>
+            applyAttrs(t.tag(obs1._1 := v1, obs2._1 := v2))
+        }
+      }
+  }
+
+  // -- find some generalized way
+
+  def any(t: TypedTag[VNode])(
+      observe: Attr*): ObservableTag with NonReactiveTag =
+    new ObservableTag with NonReactiveTag {
+      override val forceObserve: Seq[_root_.scalatags.VDom.all.Attr] = observe
+      override val tag: Id[TypedTag[VNode]] = applyAttrs(t)
+    }
 
   def inputElement(t: TypedTag[VNode])(
-      observe: Attr*): ObservableTag with InputElement =
-    new ObservableTag with InputElement {
-      override val tag: TypedTag[VNode] = (oninput +: observe)
-        .foldLeft(t)(applyAttr)
-        .apply(onvdomload := { (e: dom.Node) =>
-          _element.next(e)
-        })
+      observe: Attr*): ObservableTag with NonReactiveTag with InputElement =
+    new ObservableTag with NonReactiveTag with InputElement {
+      override val forceObserve: Seq[_root_.scalatags.VDom.all.Attr] = oninput +: observe
+      override val tag: Id[TypedTag[VNode]] = applyAttrs(t)
     }
 
   def checkbox(t: TypedTag[VNode])(
-      observe: Attr*): ObservableTag with Checkbox =
-    new ObservableTag with Checkbox {
-      override val tag: TypedTag[VNode] = (onchange +: observe)
-        .foldLeft(t)(applyAttr)
-        .apply(onvdomload := { (e: dom.Node) =>
-          _element.next(e)
-        })
+      observe: Attr*): ObservableTag with NonReactiveTag with Checkbox =
+    new ObservableTag with NonReactiveTag with Checkbox {
+      override val forceObserve: Seq[_root_.scalatags.VDom.all.Attr] = onchange +: observe
+      override val tag: Id[TypedTag[VNode]] = applyAttrs(t)
     }
 }
 
-object ObservableTag {
-
-  def apply(t: TypedTag[VNode])(observe: Attr*) = new ObservableTag {
-    override lazy val tag: TypedTag[VNode] = observe
-      .foldLeft(t)(applyAttr)
-      .apply(onvdomload := { (e: dom.Node) =>
-        _element.next(e)
-      })
-  }
+trait HasTag {
+  type Container[+A]
+  val tag: Container[TypedTag[VNode]]
 }
 
-trait ObservableTag {
+trait NonReactiveTag extends HasTag {
+  override type Container[+A] = Id[A]
+}
 
-  val tag: TypedTag[VNode]
+trait ReactiveTag extends HasTag {
+  override type Container[+A] = Observable[A]
+}
+
+trait ObservableTag { self: HasTag =>
 
   // events
 
@@ -95,6 +130,18 @@ trait ObservableTag {
     t(attr := { (e: dom.Event) =>
       _events.next(e)
     })
+
+  // internal
+
+  val forceObserve: Seq[Attr]
+
+  protected[this] def applyAttrs(t: TypedTag[VNode]) =
+    forceObserve
+      .foldLeft(t)(applyAttr)
+      .apply(onvdomload := { (e: dom.Node) =>
+        _element.next(e)
+      })
+
 }
 
 trait InputElement { self: ObservableTag =>

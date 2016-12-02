@@ -80,6 +80,8 @@ val libsDeps = Seq(
     //"com.marekkadek" %%% "rxscala-js-cats" % "0.1-SNAPSHOT",
     "com.marekkadek" %%% "scalatags-vdom" % "0.3.0-SNAPSHOT" changing(),
 
+    "com.chuusai" %%% "shapeless" % "2.3.2",
+
     "org.scalatest" %%% "scalatest" % "3.0.1" % Test,
     "org.scalacheck" %%% "scalacheck" % "1.13.4" % Test
   ),
