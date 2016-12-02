@@ -8,6 +8,7 @@ import scala.scalajs.js.JSApp
 import scala.concurrent.duration._
 import scala.scalajs.js.Dynamic.global
 import scalatags.VDom.TypedTag
+import scalatags.vdom.{observe, react}
 import scalatags.vdom.observe._
 import scalatags.vdom.raw.VNode
 
@@ -25,22 +26,22 @@ object Main extends JSApp {
     inputCheck.checked.subscribe(x => println("checked:" + x))
     inputCheck.value.subscribe(x => println("value:" + x))
 
-    val inputO = inputElement(input(`type` := "text", value := "something"))()
+    val inputO = observe.inputElement(input(`type` := "text", value := "something"))()
     inputO.value.subscribe(x => println("input text: " + x))
     inputO.element.subscribe(x => println("input element:" + x))
     inputO.events.subscribe(x => println("input: " + x), e => println(e))
 
     val printlnButtonO =
-      any(input(`type` := "button", value := "println"))(onclick)
+      observe.any(input(`type` := "button", value := "println"))(onclick)
     printlnButtonO.events
       .subscribe(x => println("button: " + x), e => println(e))
 
     // -- components that react
     // -- todo - be able to observe events from component that readcts
-    val reactButton = react(input(`type` := "button"))(value -> inputO.value)
+    val reactButton = react.at(input(`type` := "button"))(value -> inputO.value)
 
     val obsReactButton =
-      react(any(input(`type` := "button"))(onclick))(value -> inputO.value.map(_.length))
+      react.at(observe.any(input(`type` := "button"))(onclick))(value -> inputO.value.map(_.length))
 
     obsReactButton.events.subscribe(x =>
       println("observable reactive button clicked"))
