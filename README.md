@@ -7,7 +7,7 @@ Observable stuff for [scalatags-vdom](https://github.com/KadekM/scalatags-vdom)
 ## Install
 
 ```scala
-libraryDependencies += "com.marekkadek" %%% "scalatags-vdom-observable" % "0.1-SNAPSHOT"
+libraryDependencies += "com.marekkadek" %%% "scalatags-vdom-observable" % "0.0.2-SNAPSHOT"
 ```
 
 It doesn't come bundled with the underlying `rx.js` file, so you'll need to either add them manually or specify them as `jsDependencies`:
