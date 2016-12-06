@@ -76,7 +76,7 @@ val publishSettings = Seq(
 
 val libsDeps = Seq(
   libraryDependencies ++= Seq(
-    "com.github.lukajcb" %%% "rxscala-js" % "0.10.0",
+    "com.github.lukajcb" %%% "rxscala-js" % "0.11.0",
     //"com.marekkadek" %%% "rxscala-js-cats" % "0.1-SNAPSHOT",
     "com.marekkadek" %%% "scalatags-vdom" % "0.3.0-SNAPSHOT" changing(),
 
