@@ -31,13 +31,13 @@ object Main extends JSApp {
     inputO.element.subscribe(x => println("input element:" + x))
     inputO.events.subscribe(x => println("input: " + x), e => println(e))
 
+
     val printlnButtonO =
       observe.any(input(`type` := "button", value := "println"))(onclick)
     printlnButtonO.events
       .subscribe(x => println("button: " + x), e => println(e))
 
     // -- components that react
-    // -- todo - be able to observe events from component that readcts
     val reactButton = react.at(input(`type` := "button"))(value -> inputO.value)
 
     val obsReactButton =
@@ -45,6 +45,10 @@ object Main extends JSApp {
 
     obsReactButton.events.subscribe(x =>
       println("observable reactive button clicked"))
+
+    val obsReactInput =
+      react.at(observe.inputElement(input(`type` := "text"))())(value -> Observable.just("foobar"))
+
 
     //  -- static components, that do not need or force re-rendering (very rare in reality...)
     def static(dyn: TypedTag[VNode]) = div(
@@ -62,10 +66,10 @@ object Main extends JSApp {
     appDiv.appendChild(el)
 
     reactButton
-      .combineLatest(obsReactButton.tag)
+      .combineLatest(obsReactButton.tag, obsReactInput.tag)
       .scan((initialdom, el)) {
-        case ((prevVDom, apDiv), (button1, button2)) =>
-          val nextVDom = static(div(button1, button2))
+        case ((prevVDom, apDiv), (button1, button2, input)) =>
+          val nextVDom = static(div(button1, button2, input))
           val patch = VirtualDom.diff(prevVDom.render, nextVDom.render)
           val nowDiv = VirtualDom.patch(apDiv, patch)
           (nextVDom, nowDiv)

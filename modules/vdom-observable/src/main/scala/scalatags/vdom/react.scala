@@ -8,6 +8,7 @@ import scalatags.vdom.raw.VNode
 
 object react {
   type ConnectAttribute[+T] = (Attr, Observable[T])
+  type ConnectSelfAttribute[+T, A] = (Attr, A => Observable[T])
 
   // -- generalize via shapeless?
   // for static content
@@ -68,4 +69,21 @@ object react {
         }
       }
   }
+
+  // self
+/*
+  def atSelf[T, A <: ObservableTag](t: A with NonReactiveTag)(obs: ConnectSelfAttribute[T, A])(
+    implicit ev: scalatags.generic.AttrValue[Builder, T])
+  : A with ReactiveTag = new ObservableTag with ReactiveTag {
+
+    override val forceObserve: Seq[_root_.scalatags.VDom.all.Attr] =
+      t.forceObserve
+
+    override val tag: Observable[TypedTag[VNode]] =
+      Observable.just(t.tag).merge {
+        obs._2.map { v =>
+          applyAttrs(t.tag(obs._1 := v))
+        }
+      }
+  }*/
 }
